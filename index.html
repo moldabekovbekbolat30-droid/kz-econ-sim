@@ -4,6 +4,23 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Симулятор экономики Казахстана</title>
+<meta name="description" content="Интерактивный симулятор: как цены и объёмы сырья проходят сквозь экспорт, курс тенге, бюджет, Нацфонд, рост ВВП и инфляцию. Все коэффициенты настраиваются." />
+<meta name="author" content="moldabekovbekbolat30-droid" />
+<meta name="theme-color" content="#0b1418" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230f1d22'/%3E%3Ctext x='32' y='45' font-size='40' text-anchor='middle' fill='%232fd6c3' font-family='Georgia,serif'%3E%E2%82%B8%3C/text%3E%3C/svg%3E" />
+<meta property="og:type" content="website" />
+<meta property="og:locale" content="ru_RU" />
+<meta property="og:site_name" content="Симулятор экономики Казахстана" />
+<meta property="og:title" content="Симулятор экономики Казахстана" />
+<meta property="og:description" content="Сквозная модель: сырьё → курс → бюджет/Нацфонд → ВВП → инфляция → импорт. Двигайте ползунки и смотрите, как реагирует экономика." />
+<meta property="og:url" content="https://moldabekovbekbolat30-droid.github.io/kz-econ-sim/" />
+<meta property="og:image" content="https://moldabekovbekbolat30-droid.github.io/kz-econ-sim/og.svg" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="Симулятор экономики Казахстана" />
+<meta name="twitter:description" content="Сквозная модель: сырьё → курс → бюджет/Нацфонд → ВВП → инфляция → импорт." />
+<meta name="twitter:image" content="https://moldabekovbekbolat30-droid.github.io/kz-econ-sim/og.svg" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
@@ -130,6 +147,16 @@
     .strip{grid-template-columns:repeat(3,1fr)}
     .cols-2{grid-template-columns:1fr}
     .cards4{grid-template-columns:repeat(2,1fr)}
+  }
+  @media (max-width:520px){
+    .wrap{padding:16px 14px 48px}
+    header.top h1{font-size:21px}
+    .strip{grid-template-columns:repeat(2,1fr);gap:8px}
+    .kpi .val{font-size:20px}
+    .cards4{grid-template-columns:1fr}
+    .tabs{gap:2px}
+    .tab{padding:9px 11px;font-size:13px}
+    .wf-row{grid-template-columns:104px 1fr 46px;gap:8px}
   }
 </style>
 </head>
