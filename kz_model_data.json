@@ -1,0 +1,148 @@
+{
+  "updated": "2026-06-04",
+  "source": "fallback (baseline 2025-2026, v1.1)",
+  "fx": {
+    "usdkzt": 490.0
+  },
+  "macro": {
+    "gdpNominal": 290.0,
+    "growth": 5.5,
+    "inflation": 11.0,
+    "nfAssets": 60.0,
+    "govResourceRevenue": 22.0,
+    "nfTransfer": 17.0,
+    "baseRate": 18.0,
+    "fedRate": 3.75
+  },
+  "prices": {
+    "brent": 95.0,
+    "uranium": 83.0,
+    "copper": 6.0
+  },
+  "drivers": {
+    "fdiUsdBn": 0.0,
+    "laborForce": 0
+  },
+  "exports": [
+    {
+      "id": "oil",
+      "label": "Нефть и нефтепродукты",
+      "base": 39.9,
+      "resource": true,
+      "ref": "Brent ~$95"
+    },
+    {
+      "id": "uranium",
+      "label": "Уран",
+      "base": 4.2,
+      "resource": true,
+      "ref": "U3O8 ~$83/lb"
+    },
+    {
+      "id": "copper",
+      "label": "Медь (рафин. + руда)",
+      "base": 6.95,
+      "resource": true,
+      "ref": "LME ~$6/кг"
+    },
+    {
+      "id": "ferro",
+      "label": "Ферросплавы",
+      "base": 2.05,
+      "resource": true,
+      "ref": "HS 7202"
+    },
+    {
+      "id": "zinclead",
+      "label": "Цинк и свинец",
+      "base": 1.6,
+      "resource": true,
+      "ref": "HS 7901,7801"
+    },
+    {
+      "id": "grain",
+      "label": "Зерно и масла",
+      "base": 2.4,
+      "resource": true,
+      "ref": "HS 1001,1512"
+    },
+    {
+      "id": "coal",
+      "label": "Уголь",
+      "base": 2.0,
+      "resource": true,
+      "ref": "HS 2701"
+    },
+    {
+      "id": "gas",
+      "label": "Газ",
+      "base": 2.5,
+      "resource": true,
+      "ref": "HS 2711"
+    },
+    {
+      "id": "other",
+      "label": "Несырьевой экспорт",
+      "base": 17.4,
+      "resource": false,
+      "ref": "остальное"
+    }
+  ],
+  "imports": [
+    {
+      "id": "mach",
+      "label": "Машины, оборуд., транспорт",
+      "base": 26
+    },
+    {
+      "id": "chem",
+      "label": "Химия и пластмассы",
+      "base": 10
+    },
+    {
+      "id": "metal",
+      "label": "Металлоизделия",
+      "base": 8
+    },
+    {
+      "id": "food",
+      "label": "Продовольствие",
+      "base": 7
+    },
+    {
+      "id": "fuel",
+      "label": "Нефтепродукты, топливо",
+      "base": 6
+    },
+    {
+      "id": "other",
+      "label": "Прочий импорт",
+      "base": 8
+    }
+  ],
+  "coeffs": {
+    "fxElasticity": -0.15,
+    "fxFedCoeff": 0.06,
+    "fxBaseRateCoeff": 0.05,
+    "rentRate": 0.35,
+    "resourceBase": 61.6,
+    "gdpPriceCoeff": 0.04,
+    "gdpFiscalCoeff": 0.7,
+    "gdpInvest": 0.06,
+    "gdpConsume": 0.06,
+    "gdpExtDemand": 0.04,
+    "gdpTfp": 0.05,
+    "gdpLabor": 0.04,
+    "gdpBaseRate": -0.15,
+    "gdpFedRate": -0.1,
+    "fxPass": 0.15,
+    "demandPush": 0.5,
+    "infConsume": 0.04,
+    "infInvest": 0.02,
+    "infBaseRate": -0.12,
+    "infTfp": -0.03,
+    "nfInvestYield": 0.05,
+    "importIncomeElast": 1.5,
+    "importFxElast": 0.3
+  }
+}

@@ -1,0 +1,799 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Симулятор экономики Казахстана</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>
+  :root{
+    --bg:#0b1418; --panel:#0f1d22; --panel2:#13262c; --line:#1d3a42;
+    --teal:#2fd6c3; --teal-d:#1aa395; --gold:#e8b84b; --gold-d:#caa033;
+    --txt:#e7f1f0; --muted:#8fa9ab; --pos:#36d399; --neg:#f4736b;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--txt);
+    font-family:'IBM Plex Sans',system-ui,sans-serif;font-size:15px;line-height:1.45}
+  h1,h2,h3{font-family:'Fraunces',Georgia,serif;font-weight:600;letter-spacing:.2px;margin:0}
+  .mono{font-family:'IBM Plex Mono',monospace}
+  .wrap{max-width:1180px;margin:0 auto;padding:22px 20px 60px}
+  header.top{display:flex;align-items:baseline;justify-content:space-between;gap:16px;flex-wrap:wrap}
+  header.top h1{font-size:26px;color:var(--txt)}
+  header.top h1 b{color:var(--teal)}
+  .sub{color:var(--muted);font-size:13px}
+  .reset{background:transparent;border:1px solid var(--line);color:var(--muted);
+    padding:8px 14px;border-radius:9px;cursor:pointer;font-family:inherit;font-size:13px;transition:.15s}
+  .reset:hover{border-color:var(--gold);color:var(--gold)}
+
+  /* indicator strip */
+  .strip{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin:18px 0 6px}
+  .kpi{background:linear-gradient(180deg,var(--panel2),var(--panel));border:1px solid var(--line);
+    border-radius:12px;padding:12px 13px}
+  .kpi .lbl{font-size:11px;text-transform:uppercase;letter-spacing:.6px;color:var(--muted)}
+  .kpi .val{font-size:22px;font-weight:600;margin-top:3px;font-family:'IBM Plex Mono',monospace}
+  .kpi .dlt{font-size:12px;margin-top:2px;font-family:'IBM Plex Mono',monospace}
+  .up{color:var(--pos)} .down{color:var(--neg)} .flat{color:var(--muted)}
+
+  /* tabs */
+  .tabs{display:flex;gap:6px;margin:20px 0 16px;border-bottom:1px solid var(--line)}
+  .tab{background:none;border:none;color:var(--muted);padding:10px 18px;cursor:pointer;
+    font-family:inherit;font-size:14px;border-bottom:2px solid transparent;margin-bottom:-1px}
+  .tab.active{color:var(--teal);border-bottom-color:var(--teal)}
+  .tab:hover{color:var(--txt)}
+
+  .grid{display:grid;gap:16px}
+  .cols-2{grid-template-columns:340px 1fr}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px}
+  .card h3{font-size:16px;margin-bottom:12px;color:var(--gold)}
+
+  /* sliders */
+  .slider{margin-bottom:14px}
+  .slider .row{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:5px}
+  .slider .name{font-size:13px}
+  .slider .pct{font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--teal)}
+  input[type=range]{width:100%;-webkit-appearance:none;height:5px;border-radius:4px;
+    background:var(--line);outline:none}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;
+    border-radius:50%;background:var(--teal);cursor:pointer;border:2px solid #0b1418}
+  input[type=range].gold::-webkit-slider-thumb{background:var(--gold)}
+
+  /* balance bar */
+  .balbar{height:34px;border-radius:9px;overflow:hidden;display:flex;border:1px solid var(--line)}
+  .balbar .ex{background:linear-gradient(90deg,var(--teal-d),var(--teal));display:flex;align-items:center;
+    padding:0 10px;font-size:12px;color:#04201d;font-weight:600;font-family:'IBM Plex Mono',monospace}
+  .balbar .im{background:linear-gradient(90deg,var(--gold),var(--gold-d));display:flex;align-items:center;
+    justify-content:flex-end;padding:0 10px;font-size:12px;color:#2a1d00;font-weight:600;font-family:'IBM Plex Mono',monospace}
+  .balcap{margin-top:8px;font-size:13px}
+
+  .cards4{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+  .mini{background:var(--panel2);border:1px solid var(--line);border-radius:11px;padding:13px}
+  .mini .lbl{font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted)}
+  .mini .val{font-size:20px;font-weight:600;margin-top:4px;font-family:'IBM Plex Mono',monospace}
+  .mini .dlt{font-size:12px;font-family:'IBM Plex Mono',monospace;margin-top:2px}
+
+  .explain{background:var(--panel2);border-left:3px solid var(--teal);border-radius:8px;
+    padding:14px 16px;font-size:14px;color:#cfe1e0;line-height:1.6}
+  .explain b{color:var(--teal)} .explain .g{color:var(--gold)}
+
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th,td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+  th{color:var(--muted);font-weight:500;text-transform:uppercase;font-size:11px;letter-spacing:.5px}
+  td code{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--teal);word-break:break-all}
+  .pill{display:inline-block;background:var(--panel2);border:1px solid var(--line);border-radius:6px;
+    padding:2px 8px;font-size:11px;color:var(--muted);font-family:'IBM Plex Mono',monospace}
+  pre{background:#06100f;border:1px solid var(--line);border-radius:9px;padding:13px;overflow:auto;
+    font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:#bfe0db}
+
+  /* hand-rolled charts */
+  .srow{margin-bottom:11px}
+  .srow .top{display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px}
+  .srow .top .nm{color:#cfe1e0}
+  .srow .top .sh{font-family:'IBM Plex Mono',monospace;color:var(--muted)}
+  .track{position:relative;height:14px;background:#0a1619;border-radius:5px;overflow:hidden}
+  .track .b-base{position:absolute;left:0;top:0;height:100%;background:#24454c;border-radius:5px}
+  .track .b-scen{position:absolute;left:0;top:0;height:100%;border-radius:5px}
+  .srow .vals{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--muted);margin-top:2px}
+  .bgroup{display:flex;align-items:flex-end;gap:26px;height:200px;padding:6px 6px 0;
+    border-bottom:1px solid var(--line)}
+  .bgcol{flex:1;display:flex;flex-direction:column;align-items:center;height:100%;justify-content:flex-end;gap:0}
+  .bgcol .pair{display:flex;align-items:flex-end;gap:8px;height:100%;width:100%;justify-content:center}
+  .bgcol .bar{width:30px;border-radius:5px 5px 0 0;display:flex;align-items:flex-start;justify-content:center;
+    font-family:'IBM Plex Mono',monospace;font-size:10px;color:#cfe1e0;padding-top:3px;min-height:2px}
+  .bglabels{display:flex;gap:26px;margin-top:8px}
+  .bglabels .l{flex:1;text-align:center;font-size:11px;color:var(--muted)}
+  .legend{display:flex;gap:16px;font-size:11px;color:var(--muted);margin-top:10px}
+  .legend i{display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:5px;vertical-align:-1px}
+  /* forecast trajectory */
+  .traj{display:flex;align-items:flex-end;gap:14px;height:220px;padding:6px 4px 0;border-bottom:1px solid var(--line)}
+  .traj .yr{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%}
+  .traj .stack{position:relative;width:100%;display:flex;justify-content:center;align-items:flex-end;height:100%}
+  .traj .fbar{width:60%;max-width:46px;border-radius:6px 6px 0 0;background:linear-gradient(180deg,var(--teal),var(--teal-d));
+    display:flex;justify-content:center;align-items:flex-start;padding-top:4px;font-family:'IBM Plex Mono',monospace;
+    font-size:10px;color:#04201d;min-height:2px}
+  .traj .basemark{position:absolute;left:8%;right:8%;border-top:2px dashed var(--gold);}
+  .traj-x{display:flex;gap:14px;margin-top:8px}
+  .traj-x .l{flex:1;text-align:center;font-size:11px;color:var(--muted)}
+  /* gdp decomposition (waterfall) */
+  .wf-row{display:grid;grid-template-columns:140px 1fr 56px;align-items:center;gap:10px;margin-bottom:7px}
+  .wf-row .nm{font-size:12px;color:#cfe1e0;text-align:right}
+  .wf-row.total .nm,.wf-row.base .nm{font-weight:600;color:var(--gold)}
+  .wf-track{position:relative;height:18px;background:#0a1619;border-radius:4px}
+  .wf-zero{position:absolute;top:-3px;bottom:-3px;width:1px;background:#365058}
+  .wf-seg{position:absolute;top:0;height:100%;border-radius:3px}
+  .wf-row .pp{font-family:'IBM Plex Mono',monospace;font-size:12px;text-align:right}
+  @media (max-width:880px){
+    .strip{grid-template-columns:repeat(3,1fr)}
+    .cols-2{grid-template-columns:1fr}
+    .cards4{grid-template-columns:repeat(2,1fr)}
+  }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script>
+/* Инлайн-фолбэк данных (используется при открытии по file://, когда fetch JSON заблокирован браузером). */
+window.__KZ_FALLBACK__ = {
+  "updated":"2026-06-04","source":"inline fallback (v1.1)",
+  "fx":{"usdkzt":490.0},
+  "macro":{"gdpNominal":290.0,"growth":5.5,"inflation":11.0,"nfAssets":60.0,"govResourceRevenue":22.0,"nfTransfer":17.0,"baseRate":18.0,"fedRate":3.75},
+  "prices":{"brent":95.0,"uranium":83.0,"copper":6.0},
+  "drivers":{"fdiUsdBn":0.0,"laborForce":0},
+  "exports":[
+    {"id":"oil","label":"Нефть и нефтепродукты","base":39.9,"resource":true,"ref":"Brent ~$95"},
+    {"id":"uranium","label":"Уран","base":4.2,"resource":true,"ref":"U3O8 ~$83/lb"},
+    {"id":"copper","label":"Медь (рафин. + руда)","base":6.95,"resource":true,"ref":"LME ~$6/кг"},
+    {"id":"ferro","label":"Ферросплавы","base":2.05,"resource":true,"ref":"HS 7202"},
+    {"id":"zinclead","label":"Цинк и свинец","base":1.6,"resource":true,"ref":"HS 7901,7801"},
+    {"id":"grain","label":"Зерно и масла","base":2.4,"resource":true,"ref":"HS 1001,1512"},
+    {"id":"coal","label":"Уголь","base":2.0,"resource":true,"ref":"HS 2701"},
+    {"id":"gas","label":"Газ","base":2.5,"resource":true,"ref":"HS 2711"},
+    {"id":"other","label":"Несырьевой экспорт","base":17.4,"resource":false,"ref":"остальное"}
+  ],
+  "imports":[
+    {"id":"mach","label":"Машины, оборуд., транспорт","base":26},
+    {"id":"chem","label":"Химия и пластмассы","base":10},
+    {"id":"metal","label":"Металлоизделия","base":8},
+    {"id":"food","label":"Продовольствие","base":7},
+    {"id":"fuel","label":"Нефтепродукты, топливо","base":6},
+    {"id":"other","label":"Прочий импорт","base":8}
+  ],
+  "coeffs":{"fxElasticity":-0.15,"fxFedCoeff":0.06,"fxBaseRateCoeff":0.05,"rentRate":0.35,"resourceBase":61.6,
+    "gdpPriceCoeff":0.04,"gdpFiscalCoeff":0.7,"gdpInvest":0.06,"gdpConsume":0.06,"gdpExtDemand":0.04,
+    "gdpTfp":0.05,"gdpLabor":0.04,"gdpBaseRate":-0.15,"gdpFedRate":-0.10,
+    "fxPass":0.15,"demandPush":0.5,"infConsume":0.04,"infInvest":0.02,"infBaseRate":-0.12,"infTfp":-0.03,
+    "nfInvestYield":0.05,"importIncomeElast":1.5,"importFxElast":0.3}
+};
+</script>
+
+<script type="text/babel" data-presets="react">
+const { useState, useEffect, useMemo } = React;
+
+/* ---------- Базовые значения драйверов (индекс = 100%, ставки из macro) ---------- */
+function baselineDrivers(DATA){
+  return { invest:100, consume:100, tfp:100, labor:100, extDemand:100,
+           baseRate:DATA.macro.baseRate, fedRate:DATA.macro.fedRate };
+}
+
+/* ---------- Экономическая модель (§7.2 PRD v1.1) ---------- */
+function computeModel(DATA, priceIdx, importDemand, fiscalShare, drivers){
+  const C = DATA.coeffs;
+  const exFx = DATA.fx.usdkzt;
+  const M = DATA.macro;
+  const dr = drivers || baselineDrivers(DATA);
+
+  const exports = DATA.exports.map(e => ({...e, value: e.base * (priceIdx[e.id] ?? 1)}));
+  const exportTotal = exports.reduce((s,e)=>s+e.value,0);
+  const exportBaseTotal = DATA.exports.reduce((s,e)=>s+e.base,0);
+  const resourceExport = exports.filter(e=>e.resource).reduce((s,e)=>s+e.value,0);
+
+  // Курс: экспорт укрепляет (−), ставка ФРС ослабляет (+), ставка НБ РК укрепляет
+  const usdkzt = exFx
+    * Math.pow(exportTotal/exportBaseTotal, C.fxElasticity)
+    * Math.pow(dr.fedRate/M.fedRate, C.fxFedCoeff)
+    * Math.pow(M.baseRate/dr.baseRate, C.fxBaseRateCoeff);
+
+  // Бюджет (рента с эффектом рычага)
+  const govRev   = M.govResourceRevenue + C.rentRate*(resourceExport - C.resourceBase);
+  const windfall = govRev - M.govResourceRevenue;
+  const spent    = (fiscalShare/100) * windfall;
+
+  // Рост ВВП = базовый уровень + Σ вкладов (п.п.)
+  const gdpContribs = [
+    { key:'base',     label:'Базовый уровень', value:M.growth, kind:'base' },
+    { key:'resource', label:'Сырьё',           value:C.gdpPriceCoeff*(resourceExport - C.resourceBase) },
+    { key:'fiscal',   label:'Бюджет (фиск.)',  value:C.gdpFiscalCoeff*spent/M.gdpNominal*100 },
+    { key:'invest',   label:'Инвестиции/FDI',  value:C.gdpInvest*(dr.invest-100) },
+    { key:'consume',  label:'Потребление',     value:C.gdpConsume*(dr.consume-100) },
+    { key:'extDemand',label:'Внешний спрос',   value:C.gdpExtDemand*(dr.extDemand-100) },
+    { key:'tfp',      label:'Производительность', value:C.gdpTfp*(dr.tfp-100) },
+    { key:'labor',    label:'Рабочая сила',    value:C.gdpLabor*(dr.labor-100) },
+    { key:'baseRate', label:'Ставка НБ РК',    value:C.gdpBaseRate*(dr.baseRate-M.baseRate) },
+    { key:'fedRate',  label:'Ставка ФРС',      value:C.gdpFedRate*(dr.fedRate-M.fedRate) },
+  ];
+  const growth = gdpContribs.reduce((s,c)=>s+c.value,0);
+
+  // Инфляция
+  const fxPass     = C.fxPass*(usdkzt/exFx - 1)*100;
+  const demandPush = C.demandPush*spent/M.gdpNominal*100;
+  const inflation  = M.inflation + fxPass + demandPush
+    + C.infConsume*(dr.consume-100) + C.infInvest*(dr.invest-100)
+    + C.infBaseRate*(dr.baseRate-M.baseRate) + C.infTfp*(dr.tfp-100);
+
+  // Нацфонд (за год)
+  const transfer = M.nfTransfer + spent;
+  const nfChange = govRev - transfer + M.nfAssets*C.nfInvestYield;
+
+  // Импорт (эндогенный)
+  const incomeFactor = 1 + C.importIncomeElast*(growth - M.growth)/100;
+  const fxFactor     = Math.pow(exFx/usdkzt, C.importFxElast);
+  const importBaseTotal = DATA.imports.reduce((s,i)=>s+i.base,0);
+  const importTotal = importBaseTotal * incomeFactor * fxFactor * (importDemand/100);
+  const importScale = importTotal/importBaseTotal;
+  const imports = DATA.imports.map(i=>({...i, value:i.base*importScale}));
+
+  const tradeBalance = exportTotal - importTotal;
+
+  return {
+    exports, imports, exportTotal, resourceExport, importTotal, tradeBalance,
+    usdkzt, govRev, windfall, spent, growth, inflation, transfer, nfChange,
+    nfEnd: M.nfAssets + nfChange, gdpContribs, fxPass, demandPush
+  };
+}
+
+/* ---------- Многолетний прогноз (Фаза 2) ----------
+   Carries Нацфонд forward year-over-year; цены сырья дрейфуют на trend%/год.
+   Текущие ползунки = шок 1-го года. Инвестдоход НФ зависит от накопленных активов. */
+function forecast(DATA, priceIdx, importDemand, fiscalShare, drivers, years, trendPct){
+  const rows = [];
+  let nf = DATA.macro.nfAssets;
+  for(let y=1; y<=years; y++){
+    const yIdx = {};
+    DATA.exports.forEach(e=>{
+      const shock = priceIdx[e.id] ?? 1;
+      yIdx[e.id] = e.resource ? shock*Math.pow(1+trendPct/100, y-1) : shock;
+    });
+    const dataY = {...DATA, macro:{...DATA.macro, nfAssets:nf}};
+    const m = computeModel(dataY, yIdx, importDemand, fiscalShare, drivers);
+    nf = m.nfEnd;
+    rows.push({year:y, exportTotal:m.exportTotal, govRev:m.govRev,
+      nfChange:m.nfChange, nfEnd:m.nfEnd, growth:m.growth, inflation:m.inflation});
+  }
+  return rows;
+}
+
+/* ---------- helpers ---------- */
+const f1 = n => (n>=0?'':'−')+Math.abs(n).toFixed(1);
+const f0 = n => (n>=0?'':'−')+Math.abs(n).toFixed(0);
+function Delta({d, suffix='', inverse=false, digits=1}){
+  const eps = digits===0?0.5:0.05;
+  const good = inverse ? d<0 : d>0;
+  const cls = Math.abs(d)<eps ? 'flat' : (good?'up':'down');
+  const arrow = Math.abs(d)<eps ? '→' : (d>0?'▲':'▼');
+  const v = digits===0?f0(d):f1(d);
+  return <span className={'dlt '+cls}>{arrow} {v}{suffix}</span>;
+}
+
+/* ---------- KPI strip ---------- */
+function KPI({lbl,val,unit,delta,inverse,digits=1}){
+  return (
+    <div className="kpi">
+      <div className="lbl">{lbl}</div>
+      <div className="val">{val}<span style={{fontSize:13,color:'var(--muted)'}}> {unit}</span></div>
+      <Delta d={delta} inverse={inverse} digits={digits}/>
+    </div>
+  );
+}
+
+/* ---------- Horizontal structure chart (pure CSS) ---------- */
+function StructureChart({rows, color}){
+  const total = rows.reduce((s,r)=>s+r.scenario,0);
+  const max = Math.max(...rows.map(r=>Math.max(r.base,r.scenario)), 0.001);
+  return (
+    <div>
+      {rows.map((r,i)=>{
+        const share = total>0 ? r.scenario/total*100 : 0;
+        return (
+          <div className="srow" key={i}>
+            <div className="top">
+              <span className="nm">{r.label}</span>
+              <span className="sh">{share.toFixed(1)}%</span>
+            </div>
+            <div className="track">
+              <div className="b-base" style={{width:(r.base/max*100)+'%'}}/>
+              <div className="b-scen" style={{width:(r.scenario/max*100)+'%',background:color}}/>
+            </div>
+            <div className="vals">
+              база ${r.base.toFixed(2)} → сценарий ${r.scenario.toFixed(2)} млрд
+            </div>
+          </div>
+        );
+      })}
+      <div className="legend">
+        <span><i style={{background:'#24454c'}}/>База</span>
+        <span><i style={{background:color}}/>Сценарий</span>
+      </div>
+    </div>
+  );
+}
+
+/* ---------- Budget vs NF chart (pure CSS) ---------- */
+function BudgetChart({base, scen}){
+  const groups = [
+    {name:'Доходы бюджета', b:base.govRev,   s:scen.govRev},
+    {name:'Трансферт из НФ', b:base.transfer, s:scen.transfer},
+    {name:'Δ Нацфонда/год',  b:base.nfChange, s:scen.nfChange},
+  ];
+  const max = Math.max(...groups.flatMap(g=>[Math.abs(g.b),Math.abs(g.s)]), 0.001);
+  const h = v => Math.max(Math.abs(v)/max*100, 1.5);
+  return (
+    <div>
+      <div className="bgroup">
+        {groups.map((g,i)=>(
+          <div className="bgcol" key={i}>
+            <div className="pair">
+              <div className="bar" style={{height:h(g.b)+'%',background:'#24454c'}}>{g.b.toFixed(0)}</div>
+              <div className="bar" style={{height:h(g.s)+'%',background: g.s<0?'#f4736b':'#e8b84b',
+                color: g.s<0?'#fff':'#2a1d00'}}>{g.s.toFixed(0)}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+      <div className="bglabels">
+        {groups.map((g,i)=><div className="l" key={i}>{g.name}</div>)}
+      </div>
+      <div className="legend">
+        <span><i style={{background:'#24454c'}}/>База</span>
+        <span><i style={{background:'#e8b84b'}}/>Сценарий</span>
+      </div>
+    </div>
+  );
+}
+
+/* ---------- NF trajectory chart (Phase 2) ---------- */
+function TrajectoryChart({base, scen}){
+  const max = Math.max(...scen.map(r=>r.nfEnd), ...base.map(r=>r.nfEnd), 1);
+  return (
+    <div>
+      <div className="traj">
+        {scen.map((r,i)=>{
+          const bnf = base[i].nfEnd;
+          return (
+            <div className="yr" key={i}>
+              <div className="stack">
+                <div className="fbar" style={{height:(r.nfEnd/max*100)+'%'}}>${r.nfEnd.toFixed(0)}</div>
+                <div className="basemark" style={{bottom:(bnf/max*100)+'%'}} title={'база $'+bnf.toFixed(0)}/>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      <div className="traj-x">
+        {scen.map((r,i)=><div className="l" key={i}>Год {r.year}</div>)}
+      </div>
+      <div className="legend">
+        <span><i style={{background:'var(--teal)'}}/>Активы НФ (сценарий)</span>
+        <span><i style={{background:'var(--gold)'}}/>Активы НФ (база, пунктир)</span>
+      </div>
+    </div>
+  );
+}
+
+/* ---------- GDP growth decomposition (waterfall, pure CSS) ---------- */
+function DecompChart({contribs, growth}){
+  // Кумулятивная раскладка: базовый уровень + каждый вклад → итог.
+  const rows = [];
+  let cum = 0;
+  contribs.forEach(c=>{
+    if(c.kind==='base'){ rows.push({label:c.label, start:0, val:c.value, kind:'base'}); cum=c.value; }
+    else { rows.push({label:c.label, start:cum, val:c.value, kind:c.value>=0?'pos':'neg'}); cum+=c.value; }
+  });
+  rows.push({label:'Итог', start:0, val:growth, kind:'total'});
+  const max = Math.max(growth, ...rows.map(r=>r.start+Math.max(r.val,0)), 0.001);
+  const scale = v => v/max*100;
+  const color = {base:'#5a6f74', pos:'#2fd6c3', neg:'#f4736b', total:'#e8b84b'};
+  return (
+    <div>
+      {rows.map((r,i)=>{
+        const left = scale(Math.min(r.start, r.start+r.val));
+        const w = Math.max(scale(Math.abs(r.val)), 0.6);
+        const near = Math.abs(r.val)<0.05 && r.kind!=='base' && r.kind!=='total';
+        return (
+          <div className={'wf-row '+r.kind} key={i}>
+            <span className="nm">{r.label}</span>
+            <div className="wf-track">
+              <div className="wf-seg" style={{left:left+'%',width:w+'%',
+                background: near?'#2a4046':color[r.kind]}}/>
+            </div>
+            <span className="pp" style={{color: r.kind==='neg'?'var(--neg)':(r.kind==='pos'?'var(--pos)':'#cfe1e0')}}>
+              {r.kind==='base'||r.kind==='total' ? r.val.toFixed(1) : (r.val>=0?'+':'−')+Math.abs(r.val).toFixed(2)}
+            </span>
+          </div>
+        );
+      })}
+      <div className="legend">
+        <span><i style={{background:'#2fd6c3'}}/>Положительный вклад</span>
+        <span><i style={{background:'#f4736b'}}/>Отрицательный</span>
+        <span><i style={{background:'#e8b84b'}}/>Итоговый рост ВВП</span>
+      </div>
+    </div>
+  );
+}
+
+/* ---------- Sources tab ---------- */
+const SOURCES = [
+  ['Курс USD/KZT','Нацбанк РК','https://nationalbank.kz/rss/rates.xml','XML, https'],
+  ['Базовая ставка','Нацбанк РК','страница базовой ставки / Open Data','8 решений/год'],
+  ['ВВП, рост, инфляция','World Bank API','https://api.worldbank.org/v2/country/KAZ/indicator/<код>','JSON, без ключа'],
+  ['Инвестиции / FDI','World Bank · НБ РК','BX.KLT.DINV.CD.WD','JSON, годовые'],
+  ['Рабочая сила','World Bank · Бюро нацстат.','SL.TLF.TOTL.IN','JSON, годовые'],
+  ['Экспорт/импорт по товарам','UN Comtrade','https://comtradeapi.un.org/data/v1/get/C/A/HS (reporter 398)','JSON, нужен ключ'],
+  ['Объёмы добычи (тонны)','Бюро нацстатистики РК','taldau.stat.gov.kz · data.egov.kz (REST v4)','JSON'],
+  ['Мировые цены сырья','World Bank Pink Sheet / EIA','CMO (xlsx) · https://api.eia.gov/v2','xlsx / JSON, ключ EIA'],
+  ['Ставка ФРС / глоб. условия','FRED (St. Louis Fed)','https://fred.stlouisfed.org/graph/fredgraph.csv?id=DFEDTARU','CSV, без ключа'],
+  ['Биржевые цены РК','Биржа ЕТС','ets.kz','скрапинг (API нет)'],
+];
+
+function App(){
+  const [DATA,setDATA] = useState(null);
+  const [tab,setTab] = useState('trade');
+
+  // controls
+  const [priceIdx,setPriceIdx] = useState({});
+  const [importDemand,setImportDemand] = useState(100);
+  const [fiscalShare,setFiscalShare] = useState(50);
+  const [drivers,setDrivers] = useState(null);
+  const [horizon,setHorizon] = useState(5);
+  const [trendPct,setTrendPct] = useState(0);
+
+  useEffect(()=>{
+    let alive=true;
+    fetch('kz_model_data.json',{cache:'no-store'})
+      .then(r=>{ if(!r.ok) throw 0; return r.json(); })
+      .then(d=>{ if(alive) initData(d); })
+      .catch(()=> initData(window.__KZ_FALLBACK__));
+    function initData(d){
+      setDATA(d);
+      const idx={}; d.exports.forEach(e=>idx[e.id]=1);
+      setPriceIdx(idx);
+      setDrivers(baselineDrivers(d));
+    }
+    return ()=>{alive=false;};
+  },[]);
+
+  const reset = ()=>{
+    const idx={}; DATA.exports.forEach(e=>idx[e.id]=1);
+    setPriceIdx(idx); setImportDemand(100); setFiscalShare(50);
+    setDrivers(baselineDrivers(DATA));
+    setHorizon(5); setTrendPct(0);
+  };
+
+  const base = useMemo(()=> DATA && computeModel(DATA,
+    Object.fromEntries(DATA.exports.map(e=>[e.id,1])), 100, 50, baselineDrivers(DATA)), [DATA]);
+  const scen = useMemo(()=> (DATA && drivers) && computeModel(DATA, priceIdx, importDemand, fiscalShare, drivers),
+    [DATA,priceIdx,importDemand,fiscalShare,drivers]);
+
+  if(!DATA || !drivers || !base || !scen) return <div className="wrap" style={{color:'#8fa9ab'}}>Загрузка данных…</div>;
+
+  const exRows = scen.exports.map((e,i)=>({label:e.label, base:DATA.exports[i].base, scenario:e.value}));
+  const imRows = scen.imports.map((e,i)=>({label:e.label, base:DATA.imports[i].base, scenario:e.value}));
+  const exPct = scen.exportTotal/(scen.exportTotal+scen.importTotal)*100;
+
+  return (
+    <div className="wrap">
+      <header className="top">
+        <div>
+          <h1>Симулятор экономики <b>Казахстана</b></h1>
+          <div className="sub">Сквозная модель: сырьё → торговля → курс → бюджет/Нацфонд → ВВП → инфляция → импорт</div>
+        </div>
+        <button className="reset" onClick={reset}>↺ Сбросить к базе</button>
+      </header>
+
+      {/* persistent KPI strip */}
+      <div className="strip">
+        <KPI lbl="Экспорт" val={'$'+scen.exportTotal.toFixed(1)} unit="млрд" delta={scen.exportTotal-base.exportTotal}/>
+        <KPI lbl="Импорт" val={'$'+scen.importTotal.toFixed(1)} unit="млрд" delta={scen.importTotal-base.importTotal} inverse/>
+        <KPI lbl="Сальдо" val={'$'+f1(scen.tradeBalance)} unit="млрд" delta={scen.tradeBalance-base.tradeBalance}/>
+        <KPI lbl="Курс ₸/$" val={scen.usdkzt.toFixed(0)} unit="" delta={scen.usdkzt-base.usdkzt} inverse digits={0}/>
+        <KPI lbl="Рост ВВП" val={scen.growth.toFixed(1)+'%'} unit="" delta={scen.growth-base.growth}/>
+        <KPI lbl="Инфляция" val={scen.inflation.toFixed(1)+'%'} unit="" delta={scen.inflation-base.inflation} inverse/>
+      </div>
+
+      <nav className="tabs">
+        <button className={'tab'+(tab==='trade'?' active':'')} onClick={()=>setTab('trade')}>Торговля</button>
+        <button className={'tab'+(tab==='drivers'?' active':'')} onClick={()=>setTab('drivers')}>Драйверы роста</button>
+        <button className={'tab'+(tab==='macro'?' active':'')} onClick={()=>setTab('macro')}>Макроэкономика</button>
+        <button className={'tab'+(tab==='forecast'?' active':'')} onClick={()=>setTab('forecast')}>Прогноз</button>
+        <button className={'tab'+(tab==='src'?' active':'')} onClick={()=>setTab('src')}>Источники данных</button>
+      </nav>
+
+      {tab==='trade' && (
+        <div className="grid cols-2">
+          <div className="card">
+            <h3>Цены экспортного сырья</h3>
+            {DATA.exports.filter(e=>e.resource).map(e=>(
+              <div className="slider" key={e.id}>
+                <div className="row">
+                  <span className="name">{e.label}</span>
+                  <span className="pct">{Math.round((priceIdx[e.id]??1)*100)}%</span>
+                </div>
+                <input type="range" min="50" max="200" step="1"
+                  value={Math.round((priceIdx[e.id]??1)*100)}
+                  onChange={ev=>setPriceIdx({...priceIdx,[e.id]:(+ev.target.value)/100})}/>
+              </div>
+            ))}
+            <div style={{height:8}}/>
+            <h3>Спрос на импорт</h3>
+            <div className="slider">
+              <div className="row">
+                <span className="name">Автономный спрос</span>
+                <span className="pct" style={{color:'var(--gold)'}}>{importDemand}%</span>
+              </div>
+              <input className="gold" type="range" min="60" max="160" step="1"
+                value={importDemand} onChange={ev=>setImportDemand(+ev.target.value)}/>
+            </div>
+          </div>
+
+          <div className="grid">
+            <div className="card">
+              <h3>Баланс торговли</h3>
+              <div className="balbar">
+                <div className="ex" style={{width:exPct+'%'}}>Экспорт ${scen.exportTotal.toFixed(1)}</div>
+                <div className="im" style={{width:(100-exPct)+'%'}}>${scen.importTotal.toFixed(1)} Импорт</div>
+              </div>
+              <div className="balcap">
+                {scen.tradeBalance>=0
+                  ? <>Профицит торгового баланса: <b className="up mono">${f1(scen.tradeBalance)} млрд</b></>
+                  : <>Дефицит торгового баланса: <b className="down mono">${f1(scen.tradeBalance)} млрд</b></>}
+              </div>
+            </div>
+            <div className="card">
+              <h3>Структура экспорта · база vs сценарий</h3>
+              <StructureChart rows={exRows} color="#2fd6c3"/>
+            </div>
+            <div className="card">
+              <h3>Структура импорта · база vs сценарий</h3>
+              <StructureChart rows={imRows} color="#e8b84b"/>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {tab==='drivers' && (()=>{
+        const setDr = (k,v)=>setDrivers({...drivers,[k]:v});
+        const DS = ({k,label,min,max,step,rate})=>(
+          <div className="slider">
+            <div className="row">
+              <span className="name">{label}</span>
+              <span className="pct">{rate ? drivers[k]+'%' : Math.round(drivers[k])+'%'}</span>
+            </div>
+            <input type="range" min={min} max={max} step={step||1} value={drivers[k]}
+              onChange={ev=>setDr(k,+ev.target.value)}/>
+          </div>
+        );
+        return (
+        <div className="grid cols-2">
+          <div className="card">
+            <h3>Совокупный спрос</h3>
+            <DS k="invest" label="Инвестиции / FDI" min={60} max={150}/>
+            <DS k="consume" label="Потребление / доходы" min={70} max={140}/>
+            <h3 style={{marginTop:14}}>Макрополитика</h3>
+            <DS k="baseRate" label="Базовая ставка НБ РК" min={8} max={24} rate/>
+            <div className="slider">
+              <div className="row"><span className="name">Доля трат сверхдоходов</span>
+                <span className="pct" style={{color:'var(--gold)'}}>{fiscalShare}%</span></div>
+              <input className="gold" type="range" min="0" max="100" step="1"
+                value={fiscalShare} onChange={ev=>setFiscalShare(+ev.target.value)}/>
+            </div>
+            <h3 style={{marginTop:14}}>Предложение (потенциал)</h3>
+            <DS k="tfp" label="Производительность (TFP)" min={85} max={120}/>
+            <DS k="labor" label="Рабочая сила / занятость" min={85} max={115}/>
+            <h3 style={{marginTop:14}}>Внешние факторы</h3>
+            <DS k="extDemand" label="Спрос партнёров (КНР/РФ/ЕС)" min={70} max={140}/>
+            <DS k="fedRate" label="Ставка ФРС" min={0.5} max={7} step={0.25} rate/>
+          </div>
+
+          <div className="grid">
+            <div className="cards4">
+              <div className="mini"><div className="lbl">Рост ВВП</div>
+                <div className="val">{scen.growth.toFixed(1)}%</div>
+                <Delta d={scen.growth-base.growth}/></div>
+              <div className="mini"><div className="lbl">Инфляция</div>
+                <div className="val">{scen.inflation.toFixed(1)}%</div>
+                <Delta d={scen.inflation-base.inflation} inverse/></div>
+              <div className="mini"><div className="lbl">Курс ₸/$</div>
+                <div className="val">{scen.usdkzt.toFixed(0)}</div>
+                <Delta d={scen.usdkzt-base.usdkzt} inverse digits={0}/></div>
+            </div>
+            <div className="card">
+              <h3>Разложение роста ВВП по вкладам, п.п.</h3>
+              <DecompChart contribs={scen.gdpContribs} growth={scen.growth}/>
+            </div>
+            <div className="card">
+              <h3>Как читать</h3>
+              <div className="explain">
+                Базовый уровень роста <b className="mono">{base.growth.toFixed(1)}%</b> — это потенциал при нейтральных условиях.
+                Каждый драйвер добавляет или вычитает <b className="g">проценты пункта</b>: сырьё — лишь один из них.
+                Сумма всех вкладов даёт итоговый рост <b className="mono">{scen.growth.toFixed(1)}%</b>.
+                Например, рост ставки НБ РК тормозит ВВП, но сбивает инфляцию.
+              </div>
+            </div>
+          </div>
+        </div>
+        );
+      })()}
+
+      {tab==='macro' && (
+        <div className="grid cols-2">
+          <div className="card">
+            <h3>Фискальная политика</h3>
+            <div className="slider">
+              <div className="row">
+                <span className="name">Доля трат сверхдоходов</span>
+                <span className="pct" style={{color:'var(--gold)'}}>{fiscalShare}%</span>
+              </div>
+              <input className="gold" type="range" min="0" max="100" step="1"
+                value={fiscalShare} onChange={ev=>setFiscalShare(+ev.target.value)}/>
+            </div>
+            <div className="explain" style={{marginTop:6}}>
+              Сверхдоходы бюджета: <b className="mono">${f1(scen.windfall)} млрд</b>.
+              Тратится <b className="mono">${f1(scen.spent)} млрд</b>, остальное копится в Нацфонде.
+            </div>
+          </div>
+
+          <div className="grid">
+            <div className="cards4">
+              <div className="mini"><div className="lbl">Курс ₸/$</div>
+                <div className="val">{scen.usdkzt.toFixed(0)}</div>
+                <Delta d={scen.usdkzt-base.usdkzt} inverse digits={0}/></div>
+              <div className="mini"><div className="lbl">Рост ВВП</div>
+                <div className="val">{scen.growth.toFixed(1)}%</div>
+                <Delta d={scen.growth-base.growth}/></div>
+              <div className="mini"><div className="lbl">Инфляция</div>
+                <div className="val">{scen.inflation.toFixed(1)}%</div>
+                <Delta d={scen.inflation-base.inflation} inverse/></div>
+              <div className="mini"><div className="lbl">Сырьевые доходы</div>
+                <div className="val">${scen.govRev.toFixed(1)}</div>
+                <Delta d={scen.govRev-base.govRev}/></div>
+              <div className="mini"><div className="lbl">Δ Нацфонда / год</div>
+                <div className="val">${f1(scen.nfChange)}</div>
+                <Delta d={scen.nfChange-base.nfChange}/></div>
+              <div className="mini"><div className="lbl">Торговое сальдо</div>
+                <div className="val">${f1(scen.tradeBalance)}</div>
+                <Delta d={scen.tradeBalance-base.tradeBalance}/></div>
+            </div>
+            <div className="card">
+              <h3>Бюджет и Нацфонд · база vs сценарий</h3>
+              <BudgetChart base={base} scen={scen}/>
+            </div>
+            <div className="card">
+              <h3>Цепочка сценария</h3>
+              <div className="explain">
+                Сырьевой экспорт <b className="mono">${scen.resourceExport.toFixed(1)} млрд</b> ({scen.resourceExport>=base.resourceExport?'выше':'ниже'} базы) →
+                приток валюты {scen.usdkzt<=base.usdkzt?'укрепляет':'ослабляет'} тенге до <b className="mono">{scen.usdkzt.toFixed(0)} ₸/$</b>.
+                Рента даёт бюджету <span className="g mono">${scen.govRev.toFixed(1)} млрд</span>, из них тратится <span className="g mono">${f1(scen.spent)} млрд</span>.
+                Это {scen.growth>=base.growth?'разгоняет':'тормозит'} ВВП до <b className="mono">{scen.growth.toFixed(1)}%</b> и
+                {scen.inflation>=base.inflation?' повышает':' снижает'} инфляцию до <b className="mono">{scen.inflation.toFixed(1)}%</b>.
+                Нацфонд за год {scen.nfChange>=0?'пополняется на':'теряет'} <b className="mono">${f1(scen.nfChange)} млрд</b> → активы ≈ <b className="mono">${scen.nfEnd.toFixed(0)} млрд</b>.
+                Импорт реагирует на доходы и курс: <b className="mono">${scen.importTotal.toFixed(1)} млрд</b>, замыкая цепочку.
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {tab==='forecast' && (()=>{
+        const baseIdx = Object.fromEntries(DATA.exports.map(e=>[e.id,1]));
+        const fcScen = forecast(DATA, priceIdx, importDemand, fiscalShare, drivers, horizon, trendPct);
+        const fcBase = forecast(DATA, baseIdx, 100, 50, baselineDrivers(DATA), horizon, 0);
+        const last = fcScen[fcScen.length-1], lastB = fcBase[fcBase.length-1];
+        return (
+        <div className="grid cols-2">
+          <div className="card">
+            <h3>Параметры прогноза</h3>
+            <div className="slider">
+              <div className="row"><span className="name">Горизонт</span>
+                <span className="pct">{horizon} лет</span></div>
+              <input type="range" min="3" max="10" step="1" value={horizon}
+                onChange={ev=>setHorizon(+ev.target.value)}/>
+            </div>
+            <div className="slider">
+              <div className="row"><span className="name">Тренд цен сырья / год</span>
+                <span className="pct" style={{color:'var(--gold)'}}>{trendPct>0?'+':''}{trendPct}%</span></div>
+              <input className="gold" type="range" min="-15" max="15" step="1" value={trendPct}
+                onChange={ev=>setTrendPct(+ev.target.value)}/>
+            </div>
+            <div className="explain" style={{marginTop:6}}>
+              Стартовый шок 1-го года = текущие ползунки на вкладках «Торговля» и «Макроэкономика».
+              Далее цены сырья меняются на <b className="mono">{trendPct>0?'+':''}{trendPct}%</b> ежегодно,
+              Нацфонд накапливается с учётом инвестдохода.
+            </div>
+            <div className="cards4" style={{marginTop:14,gridTemplateColumns:'1fr 1fr'}}>
+              <div className="mini"><div className="lbl">НФ через {horizon} лет</div>
+                <div className="val">${last.nfEnd.toFixed(0)}</div>
+                <Delta d={last.nfEnd-lastB.nfEnd} digits={0}/></div>
+              <div className="mini"><div className="lbl">Δ к базе</div>
+                <div className="val">${f0(last.nfEnd-lastB.nfEnd)}</div>
+                <span className="dlt flat">млрд</span></div>
+            </div>
+          </div>
+
+          <div className="grid">
+            <div className="card">
+              <h3>Накопление Нацфонда · {horizon} лет</h3>
+              <TrajectoryChart base={fcBase} scen={fcScen}/>
+            </div>
+            <div className="card">
+              <h3>По годам</h3>
+              <table>
+                <thead><tr><th>Год</th><th>Экспорт</th><th>Доходы бюджета</th><th>Δ НФ</th><th>Активы НФ</th></tr></thead>
+                <tbody>
+                  {fcScen.map((r,i)=>(
+                    <tr key={i}>
+                      <td>{r.year}</td>
+                      <td className="mono">${r.exportTotal.toFixed(1)}</td>
+                      <td className="mono">${r.govRev.toFixed(1)}</td>
+                      <td className="mono">${f1(r.nfChange)}</td>
+                      <td className="mono" style={{color:'var(--teal)'}}>${r.nfEnd.toFixed(1)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+        );
+      })()}
+
+      {tab==='src' && (
+        <div className="grid">
+          <div className="card">
+            <h3>Источники данных</h3>
+            <div className="sub" style={{marginBottom:12}}>
+              Дата последнего обновления: <span className="pill">{DATA.updated}</span>
+              &nbsp; режим данных: <span className="pill">{DATA.source||'—'}</span>
+            </div>
+            <table>
+              <thead><tr><th>Показатель</th><th>Источник</th><th>Эндпоинт</th><th>Формат</th></tr></thead>
+              <tbody>
+                {SOURCES.map((r,i)=>(
+                  <tr key={i}><td>{r[0]}</td><td>{r[1]}</td><td><code>{r[2]}</code></td><td>{r[3]}</td></tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <div className="card">
+            <h3>Запуск пайплайна</h3>
+            <pre>{`# 1. ключи API (опционально — иначе fallback)
+export COMTRADE_KEY=...   # UN Comtrade
+export EIA_KEY=...        # EIA energy prices
+
+# 2. сборка артефакта данных
+python3 kz_data_pipeline.py
+
+# результат → kz_model_data.json (читается дашбордом)
+# по расписанию: добавить в cron, напр. ежедневно в 06:00
+#   0 6 * * *  cd /путь && python3 kz_data_pipeline.py`}</pre>
+            <div className="sub" style={{marginTop:10}}>
+              Падение одного источника не ломает сборку — пайплайн подставляет последние известные значения (fallback).
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className="sub" style={{marginTop:24,textAlign:'center'}}>
+        Все коэффициенты иллюстративные и вынесены в <code className="mono" style={{color:'var(--teal)'}}>kz_model_data.json → coeffs</code>. Модель статическая, однопериодная.
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>
