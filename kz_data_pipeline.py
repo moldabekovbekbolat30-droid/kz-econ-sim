@@ -41,14 +41,14 @@ DEFAULT_DATA = {
     "prices": {"brent": 95.0, "uranium": 83.0, "copper": 6.0},
     "drivers": {"fdiUsdBn": 0.0, "laborForce": 0},
     "exports": [
-        {"id": "oil", "label": "Нефть и нефтепродукты", "base": 39.9, "resource": True, "ref": "Brent ~$95"},
-        {"id": "uranium", "label": "Уран", "base": 4.2, "resource": True, "ref": "U3O8 ~$83/lb"},
-        {"id": "copper", "label": "Медь (рафин. + руда)", "base": 6.95, "resource": True, "ref": "LME ~$6/кг"},
-        {"id": "ferro", "label": "Ферросплавы", "base": 2.05, "resource": True, "ref": "HS 7202"},
-        {"id": "zinclead", "label": "Цинк и свинец", "base": 1.6, "resource": True, "ref": "HS 7901,7801"},
-        {"id": "grain", "label": "Зерно и масла", "base": 2.4, "resource": True, "ref": "HS 1001,1512"},
-        {"id": "coal", "label": "Уголь", "base": 2.0, "resource": True, "ref": "HS 2701"},
-        {"id": "gas", "label": "Газ", "base": 2.5, "resource": True, "ref": "HS 2711"},
+        {"id": "oil", "label": "Нефть и нефтепродукты", "base": 39.9, "resource": True, "ref": "Brent ~$95", "price": 95.0, "unit": "барр."},
+        {"id": "uranium", "label": "Уран", "base": 4.2, "resource": True, "ref": "U3O8 ~$83/lb", "price": 83.0, "unit": "фунт"},
+        {"id": "copper", "label": "Медь (рафин. + руда)", "base": 6.95, "resource": True, "ref": "LME ~$9.3/кг", "price": 9.3, "unit": "кг"},
+        {"id": "ferro", "label": "Ферросплавы", "base": 2.05, "resource": True, "ref": "Ферросилиций/хром ~$1.2/кг", "price": 1.2, "unit": "кг"},
+        {"id": "zinclead", "label": "Цинк и свинец", "base": 1.6, "resource": True, "ref": "Zn/Pb ~$2.6/кг", "price": 2.6, "unit": "кг"},
+        {"id": "grain", "label": "Зерно и масла", "base": 2.4, "resource": True, "ref": "Пшеница ~$230/т", "price": 0.23, "unit": "кг"},
+        {"id": "coal", "label": "Уголь", "base": 2.0, "resource": True, "ref": "Энергоуголь ~$115/т", "price": 0.12, "unit": "кг"},
+        {"id": "gas", "label": "Газ", "base": 2.5, "resource": True, "ref": "Газ ~$300/тыс. м³", "price": 0.3, "unit": "м³"},
         {"id": "other", "label": "Несырьевой экспорт", "base": 17.4, "resource": False, "ref": "остальное"},
     ],
     "imports": [
@@ -289,8 +289,13 @@ def fetch_eia(data):
         payload = json.loads(http_get(url))
         rows = payload.get("response", {}).get("data", [])
         if rows:
-            data["prices"]["brent"] = round(float(rows[0]["value"]), 2)
-            log_ok(name, "Brent = %.2f" % data["prices"]["brent"])
+            brent = round(float(rows[0]["value"]), 2)
+            data["prices"]["brent"] = brent
+            # Отражаем цену Brent и в карточке нефтяного экспорта (для UI цен сырья).
+            for e in data["exports"]:
+                if e["id"] == "oil":
+                    e["price"] = brent
+            log_ok(name, "Brent = %.2f" % brent)
         else:
             raise ValueError("пустой ответ")
     except Exception as e:  # noqa: BLE001

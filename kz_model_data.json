@@ -29,56 +29,72 @@
       "label": "Нефть и нефтепродукты",
       "base": 39.9,
       "resource": true,
-      "ref": "Brent ~$95"
+      "ref": "Brent ~$95",
+      "price": 95.0,
+      "unit": "барр."
     },
     {
       "id": "uranium",
       "label": "Уран",
       "base": 4.2,
       "resource": true,
-      "ref": "U3O8 ~$83/lb"
+      "ref": "U3O8 ~$83/lb",
+      "price": 83.0,
+      "unit": "фунт"
     },
     {
       "id": "copper",
       "label": "Медь (рафин. + руда)",
       "base": 6.95,
       "resource": true,
-      "ref": "LME ~$6/кг"
+      "ref": "LME ~$9.3/кг",
+      "price": 9.3,
+      "unit": "кг"
     },
     {
       "id": "ferro",
       "label": "Ферросплавы",
       "base": 2.05,
       "resource": true,
-      "ref": "HS 7202"
+      "ref": "Ферросилиций/хром ~$1.2/кг",
+      "price": 1.2,
+      "unit": "кг"
     },
     {
       "id": "zinclead",
       "label": "Цинк и свинец",
       "base": 1.6,
       "resource": true,
-      "ref": "HS 7901,7801"
+      "ref": "Zn/Pb ~$2.6/кг",
+      "price": 2.6,
+      "unit": "кг"
     },
     {
       "id": "grain",
       "label": "Зерно и масла",
       "base": 2.4,
       "resource": true,
-      "ref": "HS 1001,1512"
+      "ref": "Пшеница ~$230/т",
+      "price": 0.23,
+      "unit": "кг"
     },
     {
       "id": "coal",
       "label": "Уголь",
       "base": 2.0,
       "resource": true,
-      "ref": "HS 2701"
+      "ref": "Энергоуголь ~$115/т",
+      "price": 0.12,
+      "unit": "кг"
     },
     {
       "id": "gas",
       "label": "Газ",
       "base": 2.5,
       "resource": true,
-      "ref": "HS 2711"
+      "ref": "Газ ~$300/тыс. м³",
+      "price": 0.3,
+      "unit": "м³"
     },
     {
       "id": "other",

@@ -73,6 +73,7 @@
   .slider .row{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:5px}
   .slider .name{font-size:13px}
   .slider .pct{font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--teal)}
+  .priceref{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--muted);margin:-2px 0 6px}
   input[type=range]{width:100%;-webkit-appearance:none;height:5px;border-radius:4px;
     background:var(--line);outline:none}
   input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;
@@ -172,14 +173,14 @@ window.__KZ_FALLBACK__ = {
   "prices":{"brent":95.0,"uranium":83.0,"copper":6.0},
   "drivers":{"fdiUsdBn":0.0,"laborForce":0},
   "exports":[
-    {"id":"oil","label":"Нефть и нефтепродукты","base":39.9,"resource":true,"ref":"Brent ~$95"},
-    {"id":"uranium","label":"Уран","base":4.2,"resource":true,"ref":"U3O8 ~$83/lb"},
-    {"id":"copper","label":"Медь (рафин. + руда)","base":6.95,"resource":true,"ref":"LME ~$6/кг"},
-    {"id":"ferro","label":"Ферросплавы","base":2.05,"resource":true,"ref":"HS 7202"},
-    {"id":"zinclead","label":"Цинк и свинец","base":1.6,"resource":true,"ref":"HS 7901,7801"},
-    {"id":"grain","label":"Зерно и масла","base":2.4,"resource":true,"ref":"HS 1001,1512"},
-    {"id":"coal","label":"Уголь","base":2.0,"resource":true,"ref":"HS 2701"},
-    {"id":"gas","label":"Газ","base":2.5,"resource":true,"ref":"HS 2711"},
+    {"id":"oil","label":"Нефть и нефтепродукты","base":39.9,"resource":true,"ref":"Brent ~$95","price":95.0,"unit":"барр."},
+    {"id":"uranium","label":"Уран","base":4.2,"resource":true,"ref":"U3O8 ~$83/lb","price":83.0,"unit":"фунт"},
+    {"id":"copper","label":"Медь (рафин. + руда)","base":6.95,"resource":true,"ref":"LME ~$9.3/кг","price":9.3,"unit":"кг"},
+    {"id":"ferro","label":"Ферросплавы","base":2.05,"resource":true,"ref":"Ферросилиций/хром ~$1.2/кг","price":1.2,"unit":"кг"},
+    {"id":"zinclead","label":"Цинк и свинец","base":1.6,"resource":true,"ref":"Zn/Pb ~$2.6/кг","price":2.6,"unit":"кг"},
+    {"id":"grain","label":"Зерно и масла","base":2.4,"resource":true,"ref":"Пшеница ~$230/т","price":0.23,"unit":"кг"},
+    {"id":"coal","label":"Уголь","base":2.0,"resource":true,"ref":"Энергоуголь ~$115/т","price":0.12,"unit":"кг"},
+    {"id":"gas","label":"Газ","base":2.5,"resource":true,"ref":"Газ ~$300/тыс. м³","price":0.3,"unit":"м³"},
     {"id":"other","label":"Несырьевой экспорт","base":17.4,"resource":false,"ref":"остальное"}
   ],
   "imports":[
@@ -205,6 +206,12 @@ const { useState, useEffect, useMemo } = React;
 function baselineDrivers(DATA){
   return { invest:100, consume:100, tfp:100, labor:100, extDemand:100,
            baseRate:DATA.macro.baseRate, fedRate:DATA.macro.fedRate };
+}
+
+/* Форматирование цены сырья в $ за единицу с разумным числом знаков. */
+function fmtPrice(v, unit){
+  const d = v >= 100 ? 0 : v >= 10 ? 1 : 2;
+  return '$' + v.toFixed(d) + (unit ? '/' + unit : '');
 }
 
 /* ---------- Экономическая модель (§7.2 PRD v1.1) ---------- */
@@ -543,17 +550,28 @@ function App(){
         <div className="grid cols-2">
           <div className="card">
             <h3>Цены экспортного сырья</h3>
-            {DATA.exports.filter(e=>e.resource).map(e=>(
+            {DATA.exports.filter(e=>e.resource).map(e=>{
+              const idx = priceIdx[e.id] ?? 1;
+              const pct = Math.round(idx*100);
+              const hasPrice = e.price != null;
+              const cur = hasPrice ? e.price*idx : null;
+              return (
               <div className="slider" key={e.id}>
                 <div className="row">
                   <span className="name">{e.label}</span>
-                  <span className="pct">{Math.round((priceIdx[e.id]??1)*100)}%</span>
+                  <span className="pct">{hasPrice ? fmtPrice(cur, e.unit) : pct+'%'}</span>
                 </div>
+                {hasPrice && (
+                  <div className="priceref">
+                    база {fmtPrice(e.price, e.unit)} · {pct>100?'+':''}{pct-100}% к базе
+                  </div>
+                )}
                 <input type="range" min="50" max="200" step="1"
-                  value={Math.round((priceIdx[e.id]??1)*100)}
+                  value={pct}
                   onChange={ev=>setPriceIdx({...priceIdx,[e.id]:(+ev.target.value)/100})}/>
               </div>
-            ))}
+              );
+            })}
             <div style={{height:8}}/>
             <h3>Спрос на импорт</h3>
             <div className="slider">
