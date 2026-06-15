@@ -1,0 +1,61 @@
+name: Refresh baseline data
+
+# Пересобирает kz_model_data.json: прогноз BigQuery/TimesFM + внешние источники.
+# Ключ сервис-аккаунта берётся из секрета репозитория GCP_SA_KEY и в код не попадает.
+# Без секретов job всё равно отработает — база останется на последних значениях (fallback).
+
+on:
+  schedule:
+    - cron: "0 6 * * *"   # ежедневно в 06:00 UTC
+  workflow_dispatch: {}    # ручной запуск из вкладки Actions
+
+permissions:
+  contents: write
+
+concurrency:
+  group: refresh-data
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install forecast deps
+        run: pip install -r data_pipeline/requirements.txt
+
+      - name: Write service-account key (if provided)
+        env:
+          GCP_SA_KEY: ${{ secrets.GCP_SA_KEY }}
+        run: |
+          if [ -n "$GCP_SA_KEY" ]; then
+            printf '%s' "$GCP_SA_KEY" > "$RUNNER_TEMP/gcp-key.json"
+            echo "GOOGLE_APPLICATION_CREDENTIALS=$RUNNER_TEMP/gcp-key.json" >> "$GITHUB_ENV"
+          else
+            echo "GCP_SA_KEY не задан — прогноз будет пропущен (fallback)."
+          fi
+
+      - name: Build data artifact
+        env:
+          GCP_PROJECT: ${{ secrets.GCP_PROJECT }}
+          BQ_DATASET: ${{ secrets.BQ_DATASET }}
+          COMTRADE_KEY: ${{ secrets.COMTRADE_KEY }}
+          EIA_KEY: ${{ secrets.EIA_KEY }}
+        run: python3 kz_data_pipeline.py
+
+      - name: Commit refreshed data
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if ! git diff --quiet -- kz_model_data.json; then
+            git add kz_model_data.json
+            git commit -m "chore(data): обновление базы $(date -u +%Y-%m-%d) [skip ci]"
+            git push
+          else
+            echo "Изменений в kz_model_data.json нет."
+          fi

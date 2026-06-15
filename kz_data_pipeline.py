@@ -92,6 +92,22 @@ WB_DRIVERS = {
     "laborForce": "SL.TLF.TOTL.IN",   # рабочая сила, всего (чел.)
 }
 
+# --- Прогноз BigQuery / TimesFM (AI.FORECAST) -> базовые значения симулятора ---
+# series_id из таблицы kz_econ.series -> путь в артефакте data.
+BQ_SERIES_MAP = {
+    "usdkzt":     ("fx", "usdkzt"),
+    "brent":      ("prices", "brent"),
+    "inflation":  ("macro", "inflation"),
+    "gdp_growth": ("macro", "growth"),
+}
+# Границы правдоподобия: прогноз вне диапазона не применяется (база не портится).
+BQ_GUARDS = {
+    "usdkzt": (300.0, 800.0),
+    "brent": (20.0, 200.0),
+    "inflation": (0.0, 40.0),
+    "gdp_growth": (-10.0, 15.0),
+}
+
 OK, FAIL = [], []
 
 
@@ -217,6 +233,98 @@ def fetch_fred(data):
         log_fail(name, repr(e))
 
 
+# ----------------------------------------------- BigQuery / TimesFM прогноз
+
+def _apply_forecast(data, forecast_map):
+    """Чистая функция: применить прогноз {series_id: value} к base-значениям.
+
+    Применяются только ряды из BQ_SERIES_MAP, прошедшие проверку правдоподобия
+    BQ_GUARDS. Возвращает список применённых series_id. Вынесена отдельно, чтобы
+    логику маппинга/защиты можно было протестировать без обращения к BigQuery.
+    """
+    applied = []
+    for sid, value in forecast_map.items():
+        if sid not in BQ_SERIES_MAP or value is None:
+            continue
+        try:
+            v = float(value)
+        except (TypeError, ValueError):
+            continue
+        lo, hi = BQ_GUARDS.get(sid, (float("-inf"), float("inf")))
+        if not (lo <= v <= hi):
+            continue
+        section, field = BQ_SERIES_MAP[sid]
+        data.setdefault(section, {})[field] = round(v, 2)
+        applied.append(sid)
+        # Цена Brent дублируется в карточку нефтяного экспорта (UI цен сырья).
+        if sid == "brent":
+            for e in data.get("exports", []):
+                if e.get("id") == "oil":
+                    e["price"] = round(v, 2)
+    return applied
+
+
+def _load_forecast_sql():
+    """SQL прогноза: путь из BQ_FORECAST_SQL, иначе data_pipeline/forecast_baseline.sql."""
+    path = os.environ.get("BQ_FORECAST_SQL") or os.path.join(HERE, "data_pipeline", "forecast_baseline.sql")
+    with open(path, "r", encoding="utf-8") as f:
+        return f.read()
+
+
+def fetch_bigquery_forecast(data):
+    """Прогноз рядов из BigQuery (TimesFM через AI.FORECAST) -> базовые значения.
+
+    Включается только при заданном GCP_PROJECT и установленном google-cloud-bigquery.
+    Иначе — мягкий fallback (ряд остаётся на последнем значении), как и прочие
+    источники (FR-9). Берётся последняя точка горизонта по каждому ряду как
+    форвардная база симулятора. Аутентификация — через GOOGLE_APPLICATION_CREDENTIALS,
+    ключ нигде не хранится в коде/артефакте.
+    """
+    name = "BigQuery · TimesFM"
+    project = os.environ.get("GCP_PROJECT")
+    if not project:
+        log_fail(name, "GCP_PROJECT не задан (прогноз отключён)")
+        return
+    try:
+        from google.cloud import bigquery  # noqa: PLC0415 — опциональная зависимость
+    except Exception as e:  # noqa: BLE001
+        log_fail(name, "google-cloud-bigquery не установлен: %r" % e)
+        return
+    try:
+        sql = _load_forecast_sql().replace("${BQ_DATASET}", os.environ.get("BQ_DATASET", "kz_econ"))
+        client = bigquery.Client(project=project)
+        rows = list(client.query(sql).result())
+        if not rows:
+            raise ValueError("прогноз пуст")
+
+        # Определяем имена колонок гибко (id / value), берём последнюю точку на ряд.
+        def col(row, *names):
+            for n in names:
+                if n in row.keys():
+                    return row[n]
+            return None
+
+        latest = {}  # sid -> (ts, value)
+        for r in rows:
+            sid = col(r, "series_id", "id", "unique_id")
+            val = col(r, "forecast_value", "forecast", "value", "yhat")
+            ts = col(r, "forecast_timestamp", "ds", "timestamp", "date")
+            if sid is None or val is None:
+                continue
+            key = str(sid)
+            if key not in latest or (ts is not None and ts >= latest[key][0]):
+                latest[key] = (ts, val)
+
+        forecast_map = {k: v for k, (_, v) in latest.items()}
+        applied = _apply_forecast(data, forecast_map)
+        if not applied:
+            raise ValueError("ни один ряд не прошёл маппинг/проверку диапазона")
+        data["baselineSource"] = "BigQuery/TimesFM (AI.FORECAST)"
+        log_ok(name, "прогноз применён к базе: " + ", ".join(applied))
+    except Exception as e:  # noqa: BLE001
+        log_fail(name, repr(e))
+
+
 COMTRADE_YEAR = 2024  # последний полный год
 
 
@@ -319,6 +427,9 @@ def main():
     fetch_fred(data)
     fetch_comtrade(data)
     fetch_eia(data)
+    # Прогноз TimesFM задаёт форвардную базу (курс, инфляция, рост, Brent),
+    # перекрывая ретро-факты выше; включается только при заданном GCP_PROJECT.
+    fetch_bigquery_forecast(data)
 
     updated_any = len(OK) > 0
     data["updated"] = datetime.date.today().isoformat()

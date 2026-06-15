@@ -461,6 +461,7 @@ function DecompChart({contribs, growth}){
 
 /* ---------- Sources tab ---------- */
 const SOURCES = [
+  ['База симулятора (прогноз)','BigQuery · TimesFM','AI.FORECAST над kz_econ.series','SQL → kz_model_data.json'],
   ['Курс USD/KZT','Нацбанк РК','https://nationalbank.kz/rss/rates.xml','XML, https'],
   ['Базовая ставка','Нацбанк РК','страница базовой ставки / Open Data','8 решений/год'],
   ['ВВП, рост, инфляция','World Bank API','https://api.worldbank.org/v2/country/KAZ/indicator/<код>','JSON, без ключа'],
@@ -802,6 +803,7 @@ function App(){
             <div className="sub" style={{marginBottom:12}}>
               Дата последнего обновления: <span className="pill">{DATA.updated}</span>
               &nbsp; режим данных: <span className="pill">{DATA.source||'—'}</span>
+              &nbsp; база: <span className="pill" style={{color:'var(--teal)'}}>{DATA.baselineSource||'ручная калибровка 2025–2026'}</span>
             </div>
             <table>
               <thead><tr><th>Показатель</th><th>Источник</th><th>Эндпоинт</th><th>Формат</th></tr></thead>
@@ -814,18 +816,23 @@ function App(){
           </div>
           <div className="card">
             <h3>Запуск пайплайна</h3>
-            <pre>{`# 1. ключи API (опционально — иначе fallback)
+            <pre>{`# прогноз TimesFM как база (опционально — иначе ручная калибровка)
+export GCP_PROJECT=...                       # проект GCP с BigQuery
+export GOOGLE_APPLICATION_CREDENTIALS=key.json
+pip install -r data_pipeline/requirements.txt
+
+# ключи внешних источников (опц. — иначе fallback)
 export COMTRADE_KEY=...   # UN Comtrade
 export EIA_KEY=...        # EIA energy prices
 
-# 2. сборка артефакта данных
+# сборка артефакта: прогноз + источники → kz_model_data.json
 python3 kz_data_pipeline.py
 
-# результат → kz_model_data.json (читается дашбордом)
-# по расписанию: добавить в cron, напр. ежедневно в 06:00
-#   0 6 * * *  cd /путь && python3 kz_data_pipeline.py`}</pre>
+# по расписанию: GitHub Actions .github/workflows/refresh-data.yml
+# (ключ — в секрете репозитория GCP_SA_KEY, в код не попадает)`}</pre>
             <div className="sub" style={{marginTop:10}}>
-              Падение одного источника не ломает сборку — пайплайн подставляет последние известные значения (fallback).
+              База берётся из прогноза BigQuery/TimesFM; при недоступности BigQuery симулятор
+              использует последние значения из <code className="mono">kz_model_data.json</code> и не падает.
             </div>
           </div>
         </div>

@@ -2,3 +2,15 @@
 __pycache__/
 *.pyc
 .DS_Store
+
+# Секреты — никогда не коммитим
+.env
+.env.*
+!.env.example
+data_pipeline/.env
+*service-account*.json
+*service_account*.json
+*-key.json
+gcp-key*.json
+credentials*.json
+*.pem
