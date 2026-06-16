@@ -1,6 +1,6 @@
 {
-  "updated": "2026-06-04",
-  "source": "fallback (baseline 2025-2026, v1.1)",
+  "updated": "2026-06-16",
+  "source": "live: 1/7 источников",
   "fx": {
     "usdkzt": 490.0
   },
@@ -20,8 +20,8 @@
     "copper": 6.0
   },
   "drivers": {
-    "fdiUsdBn": 0.0,
-    "laborForce": 0
+    "fdiUsdBn": 2.0,
+    "laborForce": 10009918
   },
   "exports": [
     {
