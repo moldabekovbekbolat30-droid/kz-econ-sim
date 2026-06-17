@@ -1,13 +1,13 @@
 {
-  "updated": "2026-06-16",
-  "source": "live: 1/7 источников",
+  "updated": "2026-06-17",
+  "source": "live: 2/7 источников",
   "fx": {
     "usdkzt": 490.0
   },
   "macro": {
-    "gdpNominal": 290.0,
-    "growth": 5.5,
-    "inflation": 11.0,
+    "gdpNominal": 291.5,
+    "growth": 5.0,
+    "inflation": 8.7,
     "nfAssets": 60.0,
     "govResourceRevenue": 22.0,
     "nfTransfer": 17.0,
