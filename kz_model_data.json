@@ -1,12 +1,12 @@
 {
-  "updated": "2026-07-01",
-  "source": "fallback (источники недоступны)",
+  "updated": "2026-07-02",
+  "source": "live: 1/7 источников",
   "fx": {
     "usdkzt": 490.0
   },
   "macro": {
-    "gdpNominal": 291.5,
-    "growth": 5.0,
+    "gdpNominal": 306.2,
+    "growth": 6.5,
     "inflation": 8.7,
     "nfAssets": 60.0,
     "govResourceRevenue": 22.0,
@@ -20,7 +20,7 @@
     "copper": 6.0
   },
   "drivers": {
-    "fdiUsdBn": 2.0,
+    "fdiUsdBn": 2.1,
     "laborForce": 10009918
   },
   "exports": [
