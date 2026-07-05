@@ -1,13 +1,13 @@
 {
-  "updated": "2026-07-04",
-  "source": "fallback (источники недоступны)",
+  "updated": "2026-07-05",
+  "source": "live: 2/7 источников",
   "fx": {
     "usdkzt": 490.0
   },
   "macro": {
     "gdpNominal": 306.2,
     "growth": 6.5,
-    "inflation": 8.7,
+    "inflation": 11.4,
     "nfAssets": 60.0,
     "govResourceRevenue": 22.0,
     "nfTransfer": 17.0,
