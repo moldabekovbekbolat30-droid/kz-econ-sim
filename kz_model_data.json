@@ -1,6 +1,6 @@
 {
-  "updated": "2026-07-13",
-  "source": "live: 1/7 источников",
+  "updated": "2026-07-14",
+  "source": "live: 2/7 источников",
   "fx": {
     "usdkzt": 490.0
   },
@@ -20,7 +20,7 @@
     "copper": 6.0
   },
   "drivers": {
-    "fdiUsdBn": 2.1,
+    "fdiUsdBn": -0.9,
     "laborForce": 10009918
   },
   "exports": [
