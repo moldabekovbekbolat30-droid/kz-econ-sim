@@ -1,6 +1,6 @@
 {
-  "updated": "2026-11-27",
-  "source": "live: 2/7 источников",
+  "updated": "2026-11-28",
+  "source": "live: 3/7 источников",
   "fx": {
     "usdkzt": 490.0
   },
@@ -12,7 +12,7 @@
     "govResourceRevenue": 22.0,
     "nfTransfer": 17.0,
     "baseRate": 18.0,
-    "fedRate": 3.75
+    "fedRate": 4.0
   },
   "prices": {
     "brent": 95.0,
